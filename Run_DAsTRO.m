@@ -10,13 +10,18 @@ close all
 clear
 clc
 
+outputName ="";
+
+plotOption = false;
+saveOption = false;
+
 %---------------------- AEROCAPTURE CORRDIOR METHOD ----------------------%
 %   [0] = Optimise exisitng corridor
 %   [1] = Single Re-entry trajectory analysis
 %   [2] = Compute Aerocapture corridor SERIAL implementation
 %   [3] = Compute Aerocapturetest5 corridor PARALLEL implementation
 %
-AerocaptureCorridor = 3;
+AerocaptureCorridor = 1;
 AerocapFiles = "savedExperiment_step01V3";
 
 gamma_range = -9.6494*pi/180;
@@ -28,6 +33,7 @@ planet = 'mars';
 defaultMarsModel = true;
 defaultEarthModel = true;
 
+densityMode = 3;    % Only used when AerocaptureCorridor = 1
 %---------------------------- OPTIMISATION MODE --------------------------%
 %   [0] = NO 
 %   [1] = YES
@@ -43,6 +49,7 @@ targetOrbit = [ 4620.5,...  % Semi-major axis (km)
                 70,...      % Inclination (deg)
                 0.05];      % Eccentricity
 
+%---------------------------- SETUP PHASE --------------------------%
 
 simInputs = inputSim();
 run caseSetup.m

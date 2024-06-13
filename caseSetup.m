@@ -12,17 +12,23 @@ elseif computer =="GLNXA64" % Linux OS
     fileData.OutputPath = fullfile("Output file"); % Output directory
     fileData.WorkingPath = fullfile(pwd + "\"); % Working directory
 end
+fileData.outputName = outputName;
 
 % Add required paths
 addpath("atmospheric models\")
 addpath("functions\")
-% Aerocapture corridor paramteres
+
+
+simInputs.plot_option = saveOption;
+simInputs.save_option = plotOption;
+%% Aerocapture corridor paramteres
 simInputs.AerocaptureCorridor = AerocaptureCorridor;
 simInputs.AerocapFiles = AerocapFiles;
 simInputs.gamma_range = gamma_range;
 simInputs.BC_range =  BC_range;
+simInputs.densityMode = densityMode;
 
-%% SIMUALTION PARAMETERS
+%% OPTIMIZATION PARAMETERS
 
 % Optimisation paramteres
 simInputs.Opti.optimisation = optimisation;

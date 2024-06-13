@@ -42,9 +42,7 @@ simInputs.chi0 = deg2rad(90-108.24);   % Heading angle (rad)
 
 %---------------------------- GENERAL OPTIONS ----------------------------%
 
-simInputs.plot_option = 1;
 simInputs.density_analysis = 1;
-simInputs.save_option = 1;
 simInputs.nPoints = 100;
 
 simInputs.Opt    = odeset('Events', @(t,y) myEventLimit(t,y,[simInputs.R, simInputs.h_AI]),...
