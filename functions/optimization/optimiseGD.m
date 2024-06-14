@@ -27,18 +27,12 @@ end
 simInputs.Opti.mins = AllMin;
 simInputs.Opti.mins(2) = 0;
 simInputs.Opti.maxs = AllMax;
-
-fitname = 'poly5';
-fitlb = fit(BC_Array', Gammalb, fitname);
-fitub = fit(BC_Array', Gammaub, fitname);
-simInputs.fitub = fitub;
-simInputs.fitlb = fitlb;
 %% OPTIMISATION
 
 options = simInputs.Opti.options;
 
 fun = @(x) ObejctiveFunc2D(x, simInputs);
-nonlcon = @(x) customConstraint(x, fitub, fitlb, simInputs.Dgamma);
+nonlcon = @(x) customConstraint(x, simInputs.fits{2}, simInputs.fits{1}, simInputs.Dgamma);
 
 A = [];
 b = [];

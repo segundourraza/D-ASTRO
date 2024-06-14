@@ -33,6 +33,18 @@ if simInputs.AerocaptureCorridor ~= 0
     end
     [Gammas, OrbitalParams, Trajectories, DesignDrivers] = aeroCorridor(simInputs);
     BCArray = simInputs.BC_range;
+
+    if any(simInputs.AerocaptureCorridor == [2,3])
+        fitname = 'poly5';
+        if simInputs.completeCorridor
+            fitlb = fit(simInputs.BC_range', Gammas(:,5), fitname);
+            fitub = fit(simInputs.BC_range', Gammas(:,4), fitname);
+        else
+            fitlb = fit(simInputs.BC_range', Gammas(:,1), fitname);
+            fitub = fit(simInputs.BC_range', Gammas(:,2), fitname);
+        end
+        simInputs.fits = {fitlb, fitub};
+    end
 end
 
 
@@ -116,8 +128,12 @@ if simInputs.plot_option
         set(fig, 'defaulttextinterpreter','tex')
         axis square
         run plotAeroCorridor.m
-
         hold on
+
+        BC = linspace(BCArray(1), BCArray(end), 100);
+        plot(BC, simInputs.fits{1}(BC)*180/pi, '-', 'color', "#7E2F8E")
+        plot(BC, simInputs.fits{2}(BC)*180/pi, '-', 'color', "#7E2F8E")
+
         if simInputs.Opti.optimisation
             plot(Optimalvalues(2), Optimalvalues(3)*180/pi, '.k','MarkerSize',32, 'DisplayName', 'Design Point')
             xline(Optimalvalues(2), '--k' , 'LineWidth',1.5, HandleVisibility='off')

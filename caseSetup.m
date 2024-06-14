@@ -17,6 +17,8 @@ fileData.outputName = outputName;
 % Add required paths
 addpath("atmospheric models\")
 addpath("functions\")
+addpath("functions\trajectory\")
+addpath("functions\optimization\")
 
 
 simInputs.plot_option = plotOption;
