@@ -19,9 +19,7 @@ if fileData.outputName == ""
 end
 
 if simInputs.AerocaptureCorridor ~= 0
-    if simInputs.AerocaptureCorridor ~= 1
-        fprintf("\nCOMPUTING AEROCAPTURE CORRIDOR...\n")
-    else
+    if simInputs.AerocaptureCorridor == 1
         if length(simInputs.BC_range) ~= length(simInputs.gamma_range)
             if length(simInputs.gamma_range) == 1
                 simInputs.gamma_range = ones(length(simInputs.BC_range))*simInputs.gamma_range;
@@ -30,10 +28,11 @@ if simInputs.AerocaptureCorridor ~= 0
             end
         end
         simInputs.density_analysis = 0;
+    else
+        fprintf("\nCOMPUTING AEROCAPTURE CORRIDOR...\n")
     end
     [Gammas, OrbitalParams, Trajectories, DesignDrivers] = aeroCorridor(simInputs);
     BCArray = simInputs.BC_range;
-    fprintf("\n")
 end
 
 
@@ -153,9 +152,25 @@ simualtionOptions = simInputs;
 %     disp("Results saved in path: " + saveFilePath)
 %     fprintf("\n")
 % end
-
-
-% Save Results
+%%
+% PLOTTING
+if simInputs.plot_option
+    fig = figure();
+    set(fig, 'defaultlinelinewidth', 2);
+    hold on
+    for i = 1:length(Trajectories)
+        yyaxis right
+        plot(Trajectories{i}(:,1), Trajectories{i}(:,end)/1e4)
+        ylabel("$\dot{q}_{max} (W/cm^2)$", Interpreter="latex" )
+        
+        yyaxis left
+        plot(Trajectories{i}(:,1), Trajectories{i}(:,end-1)/1e6)
+        ylabel("$Q (MJ/m^2)$", Interpreter="latex" )
+    end
+    hold off
+    xlabel("$t (s)$", Interpreter="latex")
+end
+%% Save Results
 if simInputs.save_option
     if ~isfolder(fileData.OutputPath)
         mkdir(fileData.OutputPath);
@@ -168,7 +183,6 @@ if simInputs.save_option
             T = array2table(Trajectories{i});
             T.Properties.VariableNames(1:9) = {'t(s)', 'r(m)', 'v (m/s)', 'FPA (rad)', 'Longitude (rad)', 'Latitude (rad)', 'Heading angle (rad)', 'Heat transfer (W/m2)', 'Heat load (J/m2)'};
             writetable(T, saveFilePath+ "_Trajectory" + i +".csv")
-            
         end
     end    
     

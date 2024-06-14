@@ -12,7 +12,7 @@ clc
 
 outputName ="";
 
-plotOption = false;
+plotOption = true;
 saveOption = false;
 
 %---------------------- AEROCAPTURE CORRDIOR METHOD ----------------------%
@@ -33,7 +33,7 @@ planet = 'mars';
 defaultMarsModel = true;
 defaultEarthModel = true;
 
-densityMode = 3;    % Only used when AerocaptureCorridor = 1
+densityMode = 1;    % Used when AerocaptureCorridor = 1 and robustCorridor = false
 %---------------------------- OPTIMISATION MODE --------------------------%
 %   [0] = NO 
 %   [1] = YES

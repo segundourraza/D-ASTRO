@@ -42,7 +42,7 @@ simInputs.chi0 = deg2rad(90-108.24);   % Heading angle (rad)
 
 %---------------------------- GENERAL OPTIONS ----------------------------%
 
-simInputs.density_analysis = 1;
+simInputs.robustCorridor = false;
 simInputs.nPoints = 100;
 
 simInputs.Opt    = odeset('Events', @(t,y) myEventLimit(t,y,[simInputs.R, simInputs.h_AI]),...

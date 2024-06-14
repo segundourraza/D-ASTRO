@@ -19,8 +19,8 @@ addpath("atmospheric models\")
 addpath("functions\")
 
 
-simInputs.plot_option = saveOption;
-simInputs.save_option = plotOption;
+simInputs.plot_option = plotOption;
+simInputs.save_option = saveOption;
 %% Aerocapture corridor paramteres
 simInputs.AerocaptureCorridor = AerocaptureCorridor;
 simInputs.AerocapFiles = AerocapFiles;
