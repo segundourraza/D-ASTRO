@@ -1,5 +1,5 @@
-function [cost, x] = cost_function(simInputs, simParams, OptiOptions, Normalise)
-if nargin < 4
+function [cost, x] = cost_function(simInputs, simParams, Normalise)
+if nargin < 3
     Normalise = 0;
 end
 
@@ -18,9 +18,9 @@ Tw = simParams(6); % Rough wall temperature
 BC = simParams(7);
 gamma = simParams(8);
 
-i_target = OptiOptions.i_orb_target;
-a_target = OptiOptions.a_orb_target;
-e_target = OptiOptions.e_orb_target;
+i_target = simInputs.Opti.i_orb_target;
+a_target = simInputs.Opti.a_orb_target;
+e_target = simInputs.Opti.e_orb_target;
 %% PERFORMANCE DRIVERS
 % Dimensional
 V_umbrella = sqrt(simInputs.SC.m / ( BC * simInputs.SC.CD * pi));
@@ -41,9 +41,9 @@ cost = 0;
 if Normalise
     x_norm = (x-simInputs.Opti.mins)./(simInputs.Opti.maxs -simInputs.Opti.mins); % Normalisation
     if simInputs.Opti.costFunc == 1
-        cost = least_square_method(x_norm, OptiOptions.Target, OptiOptions.weights);
+        cost = least_square_method(x_norm, simInputs.Opti.target, simInputs.Opti.weights);
     elseif simInputs.Opti.costFunc == 2
-        cost = pseudo_huber_loss(x_norm, OptiOptions.Target, OptiOptions.weights, simInputs.Opti.delta) ;
+        cost = pseudo_huber_loss(x_norm, simInputs.Opti.target, simInputs.Opti.weights, simInputs.Opti.delta) ;
     end
 end
 

@@ -1,2 +1,5 @@
 # Ignore .asv files
 *.asv
+
+# Ignore Output files folder
+Output files/

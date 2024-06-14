@@ -2,19 +2,11 @@ function [AllGamma, Params, Trajectories, DesignDrivers] = aeroCorridor(simInput
 
 BC_range = simInputs.BC_range;
 gamma_range = simInputs.gamma_range;
-robustCorridor = simInputs.robustCorridor;
 
 nBC = length(BC_range);
 
 %% INITIALISING PARAMETERS
 density_label = {'normal', 'low', 'high'};
-if robustCorridor
-    ndensity = [1,2,3];
-    Params = zeros([nBC, ndensity*9*2]);
-    DesignDrivers = zeros([nBC, ndensity*7*2]);
-    AllGamma = zeros([nBC, 6]);
-    Trajectories = cell([nBC, 1]);
-end
 
 switch simInputs.AerocaptureCorridor
     case 1  % ONLY RE-ENTRY TRAJECTORY
@@ -29,180 +21,264 @@ switch simInputs.AerocaptureCorridor
             t = trajResults(:,1);
             tend =  t(end);
             tq = linspace(0, tend, simInputs.nPoints);
-            V = trajResults(:,2:end);
-            Vq = interp1(t, V, tq, 'pchip');
-            % F = griddedInterpolant(trajResults(:,1), V);
-            % Vq = F(tq);
-            array = [tq', Vq];
-
-            [~, drivers] = cost_function(simInputs, simParams, simInputs.Opti);
+            Vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
 
             % OUTPUT
             Params(ibc,:) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
-            DesignDrivers(ibc,:) = drivers;
-            Trajectories{ibc} = array;
+            [~, DesignDrivers(ibc,:)] = cost_function(simInputs, simParams);
+            Trajectories{ibc} = [tq', Vq];
             AllGamma(ibc,:) = simParams(9);
         end
     case 2  % AEROCAPTURE CORRIDOR SERIAL IMPLEMENTATION
-        if robustCorridor
-            [gamma_lower, gamma_upper] = getRobustCorridor(simInputs, BC);
-            Dgamma= (gamma_upper - gamma_lower)/2;
+        if  ~simInputs.completeCorridor
+            Params = zeros([nBC, 9*2]);             % Stores trajectory parameters
+            DesignDrivers = zeros([nBC, 7*2]);      % Stores design driver values
+            AllGamma = zeros([nBC, 2]);             % Stores gammas at boundaries
+            Trajectories = cell([nBC, 2]);          % Stores trajctories
+            for ibc = 1:nBC
+                fprintf("\n\tStrating BC case %4u of %4u (%6.2f)", ibc, nBC, BC_range(ibc));
+                % Compute lower and upper robust FPA angles (binary search)
+                [AllGamma(ibc,1), AllGamma(ibc,2)] = getRobustCorridor(simInputs, BC_range(ibc));
 
-            [simParams, trajResults] = Trajectory3DSim([BC,gamma_lower], density_mode, simInputs);
-            t = trajResults(:,1);
-            tq = linspace(0, t(end), simInputs.nPoints);
-            V = trajResults(:,2:end);
-            F = griddedInterpolant(t, V);
-            Vq = F(tq);
-        else
-            denMod = simInputs.densityMode;
-        end
-        for ibc = 1:nBC % Looping BC range
-            tempGamma = zeros([1,2*3]);
-            tempParams = zeros([1,2*3*9]);
-            tempTraj = zeros([simInputs.nPoints, 3*2*9]);
-            tempDrivers = zeros([1,2*3*7]);
-            BC = BC_range(ibc);
-            fprintf("\nSTARTING BC case " + ibc + " of " + nBC + " (" + BC + ").");
+                Dgamma= (AllGamma(ibc,2) - AllGamma(ibc,1))/2;
 
-            for denMod = 1:N
-                density_mode = ndensity(denMod);
-                results = zeros([9,2]);
-                drivers = zeros([7,2]);
-                fprintf("\n\tDensity scenario " + density_mode + ": " + density_label{density_mode} + ".")
-                % Get corridor boundaries
-                [gamma_lower, gamma_upper] = getCorridorBoundary(simInputs, BC, density_mode);
-                Dgamma= (gamma_upper - gamma_lower)/2;
-
-                [simParams, trajResults] = Trajectory3DSim([BC,gamma_lower], density_mode, simInputs);
-
+                % Running LOWER boundary trajectory with HIGH density mode
+                % to get driver values
+                [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),AllGamma(ibc,1)], 3, simInputs);
                 t = trajResults(:,1);
                 tq = linspace(0, t(end), simInputs.nPoints);
-                V = trajResults(:,2:end);
-                F = griddedInterpolant(t, V);
-                Vq = F(tq);
+                vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
 
-                array1 = [tq', Vq];
-                results(1,1) = simParams(1); % a
-                results(2,1) = simParams(2); % e
-                results(3,1) = simParams(3); % i
-                results(4,1) = simParams(9); % Omega
-                results(5,1) = simParams(10); % omega
-                results(6,1) = simParams(11); % theta
-                results(7,1) = simParams(4); % q_dot_max
-                results(8,1) = simParams(5); % Q(end)
-                results(9,1) = simParams(6); % Tw(end)
-                [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
-                drivers(:,1) = [temp(1:end-1),Dgamma];
+                [~, temp] = cost_function(simInputs, simParams);
+                % Add simualtion results:
+                % [a, e, i, Omega, omega, theta,qdot_max, Q, Tw]
+                Params(ibc,1:9) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
+                DesignDrivers(ibc,1:7) = [temp(1:end-1), Dgamma];
+                Trajectories{ibc,1} = [tq', vq];
 
-                [simParams, trajResults] = Trajectory3DSim([BC,gamma_upper], density_mode, simInputs);
 
+                % Running UPPER boundary trajectory with LOW density mode
+                % to get driver values
+                [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),AllGamma(ibc,2)], 2, simInputs);
                 t = trajResults(:,1);
                 tq = linspace(0, t(end), simInputs.nPoints);
-                V = trajResults(:,2:end);
-                F = griddedInterpolant(t, V);
-                Vq = F(tq);
+                vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
 
-                array2 = [tq', Vq];
-                results(1,2) = simParams(1);
-                results(2,2) = simParams(2);
-                results(3,2) = simParams(3);
-                results(4,2) = simParams(9);
-                results(5,2) = simParams(10);
-                results(6,2) = simParams(11);
-                results(7,2) = simParams(4);
-                results(8,2) = simParams(5);
-                results(9,2) = simParams(6);
-                [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
-                Dgamma = (gamma_lower- gamma_upper)/2;
-                drivers(:,2) = [temp(1:end-1),Dgamma];
-
-                tempGamma(1,2*(density_mode-1)+1:2*density_mode) = [gamma_lower, gamma_upper];
-                tempParams(2*9*(density_mode-1)+1:2*9*density_mode) = results(:)';
-                tempTraj(:,18*(density_mode-1)+1:18*density_mode) = [array1, array2];
-                tempDrivers(:,2*7*(density_mode-1)+1:2*7*density_mode) = drivers(:)';
+                [~, temp] = cost_function(simInputs, simParams);
+                % Add simualtion results:
+                % [a, e, i, Omega, omega, theta,qdot_max, Q, Tw]
+                Params(ibc,10:18) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
+                DesignDrivers(ibc,8:14) = [temp(1:end-1), Dgamma];
+                Trajectories{ibc,2} = [tq', vq];
             end
-            %% OUTPUT
-            Params(ibc, :) = tempParams;
-            Trajectories{ibc, 1} = tempTraj;
-            AllGamma(ibc, :) = tempGamma;
-            DesignDrivers(ibc,:) = tempDrivers;
+        else
+            Params = zeros([nBC, 3*9*2]);             % Stores trajectory parameters
+            DesignDrivers = zeros([nBC, 3*7*2]);      % Stores design driver values
+            AllGamma = zeros([nBC, 3*2]);             % Stores gammas at boundaries
+            Trajectories = cell(nBC);                 % Stores trajctories
+            for ibc = 1:nBC % Looping BC range
+                tempGamma = zeros([1,2*3]);
+                tempParams = zeros([1,2*3*9]);
+                tempTraj = zeros([simInputs.nPoints, 3*2*9]);
+                tempDrivers = zeros([1,2*3*7]);
+                BC = BC_range(ibc);
+                fprintf("\n\tStrating BC case %4u of %4u (%6.2f)", ibc, nBC, BC_range(ibc));
+
+                for density_mode = 1:3
+                    results = zeros([9,2]);
+                    drivers = zeros([7,2]);
+                    fprintf("\n\t\tDensity scenario " + density_mode + ": " + density_label{density_mode} + ".")
+                    % Get corridor boundaries
+                    [gamma_lower, gamma_upper] = getCorridorBoundary(simInputs, BC, density_mode);
+                    Dgamma= (gamma_upper - gamma_lower)/2;
+
+                    [simParams, trajResults] = Trajectory3DSim([BC,gamma_lower], density_mode, simInputs);
+
+                    t = trajResults(:,1);
+                    tq = linspace(0, t(end), simInputs.nPoints);
+                    V = trajResults(:,2:end);
+                    F = griddedInterpolant(t, V);
+                    Vq = F(tq);
+
+                    array1 = [tq', Vq];
+                    results(1,1) = simParams(1); % a
+                    results(2,1) = simParams(2); % e
+                    results(3,1) = simParams(3); % i
+                    results(4,1) = simParams(9); % Omega
+                    results(5,1) = simParams(10); % omega
+                    results(6,1) = simParams(11); % theta
+                    results(7,1) = simParams(4); % q_dot_max
+                    results(8,1) = simParams(5); % Q(end)
+                    results(9,1) = simParams(6); % Tw(end)
+                    [~, temp] = cost_function(simInputs, simParams);
+                    drivers(:,1) = [temp(1:end-1),Dgamma];
+
+                    [simParams, trajResults] = Trajectory3DSim([BC,gamma_upper], density_mode, simInputs);
+
+                    t = trajResults(:,1);
+                    tq = linspace(0, t(end), simInputs.nPoints);
+                    V = trajResults(:,2:end);
+                    F = griddedInterpolant(t, V);
+                    Vq = F(tq);
+
+                    array2 = [tq', Vq];
+                    results(1,2) = simParams(1);
+                    results(2,2) = simParams(2);
+                    results(3,2) = simParams(3);
+                    results(4,2) = simParams(9);
+                    results(5,2) = simParams(10);
+                    results(6,2) = simParams(11);
+                    results(7,2) = simParams(4);
+                    results(8,2) = simParams(5);
+                    results(9,2) = simParams(6);
+                    [~, temp] = cost_function(simInputs, simParams);
+                    Dgamma = (gamma_lower- gamma_upper)/2;
+                    drivers(:,2) = [temp(1:end-1),Dgamma];
+
+                    tempGamma(1,2*(density_mode-1)+1:2*density_mode) = [gamma_lower, gamma_upper];
+                    tempParams(2*9*(density_mode-1)+1:2*9*density_mode) = results(:)';
+                    tempTraj(:,18*(density_mode-1)+1:18*density_mode) = [array1, array2];
+                    tempDrivers(:,2*7*(density_mode-1)+1:2*7*density_mode) = drivers(:)';
+                end
+                %% OUTPUT
+                Params(ibc, :) = tempParams;
+                Trajectories{ibc, 1} = tempTraj;
+                AllGamma(ibc, :) = tempGamma;
+                DesignDrivers(ibc,:) = tempDrivers;
+            end
         end
     case 3  % AEROCAPTURE CORRIDOR
         %% START PARALLEL COMPUTING POOL
-        parfor ibc = 1:nBC % Looping BC range
-            localSimInputs = simInputs;
 
-            tempGamma = zeros([1,2*3]);
-            tempParams = zeros([1,2*3*9]);
-            tempTraj = zeros([localSimInputs.nPoints, 3*2*10]);
-            tempDrivers = zeros([1,2*3*6])
-            BC = BC_range(ibc);
+        if  ~simInputs.completeCorridor
+            Params = zeros([nBC, 9*2]);             % Stores trajectory parameters
+            DesignDrivers = zeros([nBC, 7*2]);      % Stores design driver values
+            AllGamma = zeros([nBC, 2]);             % Stores gammas at boundaries
+            Trajectories = cell([nBC, 2]);          % Stores trajctories
+            parfor ibc = 1:nBC
+                localSimInputs = simInputs;
+                tempParams = zeros([1, 9*2]);
+                tempDrivers = zeros([1, 7*2]);
+                tempGamma = zeros([1, 2]);
+                tempTraj = zeros([localSimInputs.nPoints, 9*2]);
 
-            for density_mode = 1:ndensity
-                results = zeros([9,2]);
-                drivers = zeros([7,2])
+                fprintf("\n\tStrating BC case %4u of %4u (%6.2f)", ibc, nBC, BC_range(ibc));
+                % Compute lower and upper robust FPA angles (binary search)
+                [tempGamma(1), tempGamma(2)] = getRobustCorridor(simInputs, BC_range(ibc));
 
-                % Get corridor boundaries
-                [gamma_lower, gamma_upper] = getCorridorBoundary(simInputs, BC, density_mode)
-                Dgamma = (gamma_upper - gamma_lower)/2;
+                Dgamma= (tempGamma(2) - tempGamma(1))/2;
 
-                [simParams, trajResults] = Trajectory3DSim([BC,gamma_lower], density_mode, simInputs);
-
+                % Running LOWER boundary trajectory with HIGH density mode
+                % to get driver values
+                [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),tempGamma(1)], 3, simInputs);
                 t = trajResults(:,1);
                 tq = linspace(0, t(end), simInputs.nPoints);
-                V = trajResults(:,2:end);
-                F = griddedInterpolant(t, V);
-                Vq = F(tq);
+                vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
 
-                array1 = [tq', Vq];
-                results(1,1) = simParams(1);
-                results(2,1) = simParams(2);
-                results(3,1) = simParams(3);
-                results(4,1) = simParams(9);
-                results(5,1) = simParams(10);
-                results(6,1) = simParams(11);
-                results(7,1) = simParams(4);
-                results(8,1) = simParams(5);
-                results(9,1) = simParams(6);
-                %                 [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
-                [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
-                drivers(:,1) = [temp(1:end-1),Dgamma];
+                [~, temp] = cost_function(simInputs, simParams);
+                % Add simualtion results:
+                % [a, e, i, Omega, omega, theta,qdot_max, Q, Tw]
+                tempParams(1:9) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
+                tempDrivers(1:7) = [temp(1:end-1), Dgamma];
+                tempTraj(:,1:9) = [tq', vq];
 
-                [simParams, trajResults] = Trajectory3DSim([BC,gamma_upper], density_mode, simInputs);
 
+                % Running UPPER boundary trajectory with LOW density mode
+                % to get driver values
+                [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),tempGamma(2)], 2, simInputs);
                 t = trajResults(:,1);
                 tq = linspace(0, t(end), simInputs.nPoints);
-                V = trajResults(:,2:end);
-                F = griddedInterpolant(t, V);
-                Vq = F(tq);
+                vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
 
-                array2 = [tq', Vq];
-                results(1,2) = simParams(1);
-                results(2,2) = simParams(2);
-                results(3,2) = simParams(3);
-                results(4,2) = simParams(9);
-                results(5,2) = simParams(10);
-                results(6,2) = simParams(11);
-                results(7,2) = simParams(4);
-                results(8,2) = simParams(5);
-                results(9,2) = simParams(6);
-                [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
-                Dgamma = - Dgamma;
-                drivers(:,2) = [temp(1:end-1),Dgamma];
+                [~, temp] = cost_function(simInputs, simParams);
+                % Add simualtion results:
+                % [a, e, i, Omega, omega, theta,qdot_max, Q, Tw]
+                tempParams(10:18) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
+                tempDrivers(8:14) = [temp(1:end-1), Dgamma];
+                tempTraj(:,10:18) = [tq', vq];
 
-                tempGamma(1,2*(density_mode-1)+1:2*density_mode) = [gamma_lower, gamma_upper];
-                tempParams(2*9*(density_mode-1)+1:2*9*density_mode) = results(:)';
-                tempTraj(:,20*(density_mode-1)+1:20*density_mode) = [array1, array2];
-                tempDrivers(:,2*7*(density_mode-1)+1:2*7*density_mode) = drivers(:)';
+                Params(ibc,:) = tempParams;
+                DesignDrivers(ibc,:) = tempDrivers;
+                AllGamma(ibc,:) = tempGamma;
+                for i = 1:2
+                    Trajectories{ibc, i} = tempTraj(:,(i-1)*9+1:i*9);
+                end
             end
-            %% OUTPUT
-            Params(ibc, :) = tempParams;
-            Trajectories{ibc, 1} = tempTraj;
-            AllGamma(ibc, :) = tempGamma;
-            DesignDrivers(ibc,:) = tempDrivers;
+        else
+            parfor ibc = 1:nBC % Looping BC range
+                localSimInputs = simInputs;
 
-            fprintf("\tBC iter: " + ibc + "/" + nBC + " DONE.\n");
+                tempGamma = zeros([1,2*3]);
+                tempParams = zeros([1,2*3*9]);
+                tempTraj = zeros([localSimInputs.nPoints, 3*2*10]);
+                tempDrivers = zeros([1,2*3*6])
+                BC = BC_range(ibc);
+
+                for density_mode = 1:ndensity
+                    results = zeros([9,2]);
+                    drivers = zeros([7,2])
+
+                    % Get corridor boundaries
+                    [gamma_lower, gamma_upper] = getCorridorBoundary(simInputs, BC, density_mode)
+                    Dgamma = (gamma_upper - gamma_lower)/2;
+
+                    [simParams, trajResults] = Trajectory3DSim([BC,gamma_lower], density_mode, simInputs);
+
+                    t = trajResults(:,1);
+                    tq = linspace(0, t(end), simInputs.nPoints);
+                    V = trajResults(:,2:end);
+                    F = griddedInterpolant(t, V);
+                    Vq = F(tq);
+
+                    array1 = [tq', Vq];
+                    results(1,1) = simParams(1);
+                    results(2,1) = simParams(2);
+                    results(3,1) = simParams(3);
+                    results(4,1) = simParams(9);
+                    results(5,1) = simParams(10);
+                    results(6,1) = simParams(11);
+                    results(7,1) = simParams(4);
+                    results(8,1) = simParams(5);
+                    results(9,1) = simParams(6);
+                    [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
+                    drivers(:,1) = [temp(1:end-1),Dgamma];
+
+                    [simParams, trajResults] = Trajectory3DSim([BC,gamma_upper], density_mode, simInputs);
+
+                    t = trajResults(:,1);
+                    tq = linspace(0, t(end), simInputs.nPoints);
+                    V = trajResults(:,2:end);
+                    F = griddedInterpolant(t, V);
+                    Vq = F(tq);
+
+                    array2 = [tq', Vq];
+                    results(1,2) = simParams(1);
+                    results(2,2) = simParams(2);
+                    results(3,2) = simParams(3);
+                    results(4,2) = simParams(9);
+                    results(5,2) = simParams(10);
+                    results(6,2) = simParams(11);
+                    results(7,2) = simParams(4);
+                    results(8,2) = simParams(5);
+                    results(9,2) = simParams(6);
+                    [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
+                    Dgamma = - Dgamma;
+                    drivers(:,2) = [temp(1:end-1),Dgamma];
+
+                    tempGamma(1,2*(density_mode-1)+1:2*density_mode) = [gamma_lower, gamma_upper];
+                    tempParams(2*9*(density_mode-1)+1:2*9*density_mode) = results(:)';
+                    tempTraj(:,20*(density_mode-1)+1:20*density_mode) = [array1, array2];
+                    tempDrivers(:,2*7*(density_mode-1)+1:2*7*density_mode) = drivers(:)';
+                end
+
+                %% OUTPUT
+                Params(ibc, :) = tempParams;
+                Trajectories{ibc, 1} = tempTraj;
+                AllGamma(ibc, :) = tempGamma;
+                DesignDrivers(ibc,:) = tempDrivers;
+
+                fprintf("\tBC iter: " + ibc + "/" + nBC + " DONE.\n");
+            end
         end
 end
 fprintf('\n')

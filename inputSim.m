@@ -42,8 +42,8 @@ simInputs.chi0 = deg2rad(90-108.24);   % Heading angle (rad)
 
 %---------------------------- GENERAL OPTIONS ----------------------------%
 
-simInputs.robustCorridor = false;
-simInputs.nPoints = 100;
+simInputs.completeCorridor = false; % If True, aerocapture boundaries for all density modes is computed (SLOW, BUT USEFULL FOR PLOTS)
+simInputs.nPoints = 50;
 
 simInputs.Opt    = odeset('Events', @(t,y) myEventLimit(t,y,[simInputs.R, simInputs.h_AI]),...
                             'RelTol',1e-6,'AbsTol',1e-6);
@@ -70,7 +70,10 @@ simInputs.Opti.options = optimoptions('fmincon',...
                                       'MaxIterations',8000, ...
                                       'PlotFcn','optimplotfvalconstr',...
                                       'FunctionTolerance',1e-16, 'OptimalityTolerance',1e-16);
-                        
+
+simInputs.Opti.options.StepTolerance = 1e-12;
+simInputs.Opti.options.FunctionTolerance = 1e-12; 
+
 simInputs.Opti.costFunc = 1;
 simInputs.Opti.delta = 0.1;
 simInputs.verbose = 0;

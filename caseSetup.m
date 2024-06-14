@@ -32,8 +32,8 @@ simInputs.densityMode = densityMode;
 
 % Optimisation paramteres
 simInputs.Opti.optimisation = optimisation;
-simInputs.Opti.weights = weights;
-simInputs.target = [0, 0, 0, 0];
+simInputs.Opti.weights = [weights, 0, 0, 0];
+simInputs.Opti.target = [0, 0, 0, 0, 0, 0,0];
 
 % Operational target orbit
 simInputs.Opti.BC_range = BC_range;
@@ -60,6 +60,6 @@ simInputs.Opti.e_orb_target = targetOrbit(3);
 %               -rho: density (Kg/m3)
 if defaultMarsModel && lower(planet) == "mars"
     run 'atmospheric models'\atmoMarsTables.m  
-elseif lower(planet) == "Earth"
+elseif lower(planet) == "earth"
     error('ERROR: Earth atmosphere not yet coded!')
 end
