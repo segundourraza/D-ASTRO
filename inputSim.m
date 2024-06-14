@@ -45,8 +45,8 @@ simInputs.chi0 = deg2rad(90-108.24);   % Heading angle (rad)
 simInputs.completeCorridor = false; % If True, aerocapture boundaries for all density modes is computed (SLOW, BUT USEFULL FOR PLOTS)
 simInputs.nPoints = 50;
 
-simInputs.Opt    = odeset('Events', @(t,y) myEventLimit(t,y,[simInputs.R, simInputs.h_AI]),...
-                            'RelTol',1e-6,'AbsTol',1e-6);
+simInputs.odeOptions    = odeset('Events', @(t,y) myEventLimit(t,y,[simInputs.R, simInputs.h_AI]),...
+                                 'RelTol',1e-6,'AbsTol',1e-6);
 simInputs.tspan = [0, 1e3];
 
 simInputs.thermalModel = 1;     % [1]:  Sutton-graves

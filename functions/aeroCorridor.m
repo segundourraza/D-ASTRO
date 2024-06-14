@@ -155,6 +155,7 @@ switch simInputs.AerocaptureCorridor
             DesignDrivers = zeros([nBC, 7*2]);      % Stores design driver values
             AllGamma = zeros([nBC, 2]);             % Stores gammas at boundaries
             Trajectories = cell([nBC, 2]);          % Stores trajctories
+            fprintf("\n")
             parfor ibc = 1:nBC
                 localSimInputs = simInputs;
                 tempParams = zeros([1, 9*2]);
@@ -162,7 +163,7 @@ switch simInputs.AerocaptureCorridor
                 tempGamma = zeros([1, 2]);
                 tempTraj = zeros([localSimInputs.nPoints, 9*2]);
 
-                fprintf("\n\tStrating BC case %4u of %4u (%6.2f)", ibc, nBC, BC_range(ibc));
+                fprintf("\tStrating BC case %4u of %4u (%6.2f)\n", ibc, nBC, BC_range(ibc));
                 % Compute lower and upper robust FPA angles (binary search)
                 [tempGamma(1), tempGamma(2)] = getRobustCorridor(simInputs, BC_range(ibc));
 
@@ -181,7 +182,6 @@ switch simInputs.AerocaptureCorridor
                 tempParams(1:9) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
                 tempDrivers(1:7) = [temp(1:end-1), Dgamma];
                 tempTraj(:,1:9) = [tq', vq];
-
 
                 % Running UPPER boundary trajectory with LOW density mode
                 % to get driver values
@@ -205,21 +205,25 @@ switch simInputs.AerocaptureCorridor
                 end
             end
         else
+            Params = zeros([nBC, 3*9*2]);             % Stores trajectory parameters
+            DesignDrivers = zeros([nBC, 3*7*2]);      % Stores design driver values
+            AllGamma = zeros([nBC, 3*2]);             % Stores gammas at boundaries
+            Trajectories = cell([nBC, 2]);          % Stores trajctories
             parfor ibc = 1:nBC % Looping BC range
                 localSimInputs = simInputs;
 
                 tempGamma = zeros([1,2*3]);
                 tempParams = zeros([1,2*3*9]);
                 tempTraj = zeros([localSimInputs.nPoints, 3*2*10]);
-                tempDrivers = zeros([1,2*3*6])
+                tempDrivers = zeros([1,2*3*6]);
                 BC = BC_range(ibc);
 
-                for density_mode = 1:ndensity
+                for density_mode = 1:3
                     results = zeros([9,2]);
-                    drivers = zeros([7,2])
+                    drivers = zeros([7,2]);
 
                     % Get corridor boundaries
-                    [gamma_lower, gamma_upper] = getCorridorBoundary(simInputs, BC, density_mode)
+                    [gamma_lower, gamma_upper] = getCorridorBoundary(simInputs, BC, density_mode);
                     Dgamma = (gamma_upper - gamma_lower)/2;
 
                     [simParams, trajResults] = Trajectory3DSim([BC,gamma_lower], density_mode, simInputs);
@@ -240,7 +244,7 @@ switch simInputs.AerocaptureCorridor
                     results(7,1) = simParams(4);
                     results(8,1) = simParams(5);
                     results(9,1) = simParams(6);
-                    [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
+                    [~, temp] = cost_function(simInputs, simParams);
                     drivers(:,1) = [temp(1:end-1),Dgamma];
 
                     [simParams, trajResults] = Trajectory3DSim([BC,gamma_upper], density_mode, simInputs);
@@ -261,13 +265,13 @@ switch simInputs.AerocaptureCorridor
                     results(7,2) = simParams(4);
                     results(8,2) = simParams(5);
                     results(9,2) = simParams(6);
-                    [~, temp] = cost_function(simInputs, simParams, simInputs.Opti);
+                    [~, temp] = cost_function(simInputs, simParams);
                     Dgamma = - Dgamma;
                     drivers(:,2) = [temp(1:end-1),Dgamma];
 
                     tempGamma(1,2*(density_mode-1)+1:2*density_mode) = [gamma_lower, gamma_upper];
                     tempParams(2*9*(density_mode-1)+1:2*9*density_mode) = results(:)';
-                    tempTraj(:,20*(density_mode-1)+1:20*density_mode) = [array1, array2];
+                    tempTraj(:,18*(density_mode-1)+1:18*density_mode) = [array1, array2];
                     tempDrivers(:,2*7*(density_mode-1)+1:2*7*density_mode) = drivers(:)';
                 end
 

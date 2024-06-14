@@ -48,7 +48,7 @@ if simInputs.AerocaptureCorridor ~= 0
 end
 
 
-if simInputs.Opti.optimisation
+if simInputs.Opti.optimisation && simInputs.AerocaptureCorridor ~= 1
     fprintf("\nSTART OPTIMISATION....\n")
     if simInputs.completeCorridor
         nTheta = 7;
@@ -60,21 +60,68 @@ if simInputs.Opti.optimisation
     else
         [Optimalvalues, OptiResults] = optimiseGD(BCArray, Gammas, DesignDrivers, simInputs);
     end
+
+    % Run optimal Trajectory
+    [~, trajResults] = Trajectory3DSim([OptiResults.BCOpt,OptiResults.GammaOpt], simInputs.densityMode, simInputs);
+    t = trajResults(:,1);
+    tend =  t(end);
+    tq = linspace(0, tend, simInputs.nPoints);
+    Vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
+    Trajectories{1} = [tq', Vq];
 end
 %% PLOTTING
 if simInputs.plot_option
     if simInputs.AerocaptureCorridor == 1
-
         lineCycle = {'-', '--', ':', '-.'};
         markerCycle = {'none','o','^','.', 's'};
         nCycle = 5;
         ms = 6;
+        
         fig = figure();
+        sgtitle("Trajectory Profiles")
         set(fig, 'defaultlinelinewidth',2)
         set(fig, 'defaultaxesfontsize', 14)
-        set(fig, 'defaulttextinterpreter','tex')
+        set(gca,'TickLabelInterpreter','latex')
+        set(fig,'defaultTextInterpreter','latex'); %trying to set the default
 
-        subplot(1,2,1)
+        subplot(2,2,1);
+        hold on
+        h = zeros(1, length(Trajectories));
+        for i = 1:length(Trajectories)
+            if i <=nCycle-1
+                style = [lineCycle(i),markerCycle(1)];
+            else
+                rem = mod(i,nCycle)+2;
+                style = [lineCycle(floor(i/(nCycle-1))),markerCycle(rem)];
+                if markerCycle(rem) == "."; ms = 24; end
+            end
+            h(1,i) = plot(Trajectories{i}(:,1), (Trajectories{i}(:,2) - simInputs.R)/1e3, 'DisplayName',sprintf("(BC, FPA) = (%5.1f, %2.2f deg)", simInputs.BC_range(i), simInputs.gamma_range(i)*180/pi), LineStyle=style(1), Marker=style(2), Color='k', MarkerSize=ms);
+        end
+        hold off
+        ylim([0,inf])
+        ylabel("$h$ (km)")
+        xlabel( "$t$ (s)")
+        
+        lh=legend(h,'location','southeast');
+        set(lh,'position',[.7 .25 .1 .1]);
+        grid on ;grid minor;
+
+        subplot(2,2,2)
+        hold on
+        for i = 1:length(Trajectories)
+            yyaxis right
+            plot(Trajectories{i}(:,1), Trajectories{i}(:,end-1)/1e4)
+            ylabel("$\dot{q}$ (W/cm$^2$)" )
+
+            yyaxis left
+            plot(Trajectories{i}(:,1), Trajectories{i}(:,end)/1e6)
+            ylabel("$Q$ (MJ/m$^2$)" )
+        end
+        hold off
+        xlabel("$t$ (s)")
+        grid on ;grid minor;
+
+        subplot(2,2,3)
         hold on
         for i = 1:length(Trajectories)
             if i <=nCycle-1
@@ -84,42 +131,12 @@ if simInputs.plot_option
                 style = [lineCycle(floor(i/(nCycle-1))),markerCycle(rem)];
                 if markerCycle(rem) == "."; ms = 24; end
             end
-            plot(Trajectories{i}(:,1), (Trajectories{i}(:,2) - simInputs.R)/1e3, 'DisplayName',sprintf("BC = %6.2f", simInputs.BC_range(i)), LineStyle=style(1), Marker=style(2), Color='k', MarkerSize=ms)
+            plot(Trajectories{i}(:,3)/1e3, (Trajectories{i}(:,2) - simInputs.R)/1e3,  LineStyle=style(1), Marker=style(2), Color='k', MarkerSize=ms)
         end
         hold off
-        ylim([0,inf])
-        ylabel("$h (km)$", Interpreter="latex")
-        xlabel( "$t (s)$", Interpreter="latex")
-        legend('Location','best')
-        subplot(1,2,2)
-        hold on
-        for i = 1:length(Trajectories)
-            yyaxis right
-            plot(Trajectories{i}(:,1), Trajectories{i}(:,end-1)/1e4,'DisplayName',sprintf("BC = %6.2f", simInputs.BC_range(i)))
-            ylabel("$\dot{q}_{max} (W/cm^2)$", Interpreter="latex" )
-
-            yyaxis left
-            plot(Trajectories{i}(:,1), Trajectories{i}(:,end)/1e6)
-            ylabel("$Q (MJ/m^2)$", Interpreter="latex" )
-        end
-        hold off
-        xlabel("$t (s)$", Interpreter="latex")
-        legend('Location','best')
-
-        fig = figure();
-        set(fig, 'defaultlinelinewidth', 2);
-        hold on
-        for i = 1:length(Trajectories)
-            yyaxis right
-            plot(Trajectories{i}(:,1), Trajectories{i}(:,end-1)/1e4)
-            ylabel("$\dot{q}_{max} (W/cm^2)$", Interpreter="latex" )
-
-            yyaxis left
-            plot(Trajectories{i}(:,1), Trajectories{i}(:,end)/1e6)
-            ylabel("$Q (MJ/m^2)$", Interpreter="latex" )
-        end
-        hold off
-        xlabel("$t (s)$", Interpreter="latex")
+        xlabel("$v$ (kms$^{-1}$)")
+        ylabel("$h$ (km)")
+        grid on ;grid minor;
 
     elseif any(simInputs.AerocaptureCorridor == [2,3])
         fig = figure();
@@ -140,6 +157,41 @@ if simInputs.plot_option
             yline(Optimalvalues(3)*180/pi, '--k' , 'LineWidth',1.5, HandleVisibility='off')
         end
         hold off
+
+
+        fig = figure();
+        sgtitle("Trajectory Profiles")
+        set(fig, 'defaultlinelinewidth',2)
+        set(fig, 'defaultaxesfontsize', 14)
+        set(gca,'TickLabelInterpreter','latex')
+        set(fig,'defaultTextInterpreter','latex'); %trying to set the default
+
+        subplot(2,2,1)
+        plot(Trajectories{1}(:,1), (Trajectories{1}(:,2) - simInputs.R)/1e3)
+
+        ylim([0,inf])
+        ylabel("$h$ (km)")
+        xlabel( "$t$ (s)")
+        grid on ;grid minor;
+        
+        subplot(2,2,2)
+        yyaxis right
+        plot(Trajectories{1}(:,1), Trajectories{1}(:,end-1)/1e4)
+        ylabel("$\dot{q}$ (W/cm$^2$)" )
+
+        yyaxis left
+        plot(Trajectories{1}(:,1), Trajectories{1}(:,end)/1e6)
+        ylabel("$Q$ (MJ/m$^2$)" )
+        hold off
+        grid on ;grid minor;
+        xlabel("$t$ (s)")
+
+        subplot(2,2,3)
+        plot(Trajectories{1}(:,3)/1e3, (Trajectories{1}(:,2) - simInputs.R)/1e3)
+        ylim([0,inf])
+        xlabel("$v$ (kms$^{-1}$)")
+        ylabel("$h$ (km)")
+        grid on ;grid minor;
 
     end
 end

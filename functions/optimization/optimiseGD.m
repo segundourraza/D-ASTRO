@@ -5,8 +5,6 @@ if nargin <5
     x0 = [BC_Array(ind), Gammas(ind,2)];
 end
 simInputs.BC_range = BC_Array;
-Gammalb = Gammas(:,1);
-Gammaub = Gammas(:,2);
 
 nTheta = 7;
 mu = zeros([1,nTheta]);
@@ -81,6 +79,5 @@ Results.target = simInputs.Opti.target;
 Results.Weights = simInputs.Opti.weights;
 Results.mins = simInputs.Opti.mins;
 Results.maxs = simInputs.Opti.maxs;
-Results.fits = {fitlb, fitub};
-
+Results.fits = simInputs.fits;
 end

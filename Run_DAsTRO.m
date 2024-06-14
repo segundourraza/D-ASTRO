@@ -20,7 +20,7 @@ saveOption = true;
 %   [1] = Single Re-entry trajectory analysis
 %   [2] = Compute Aerocapture corridor SERIAL implementation
 %   [3] = Compute Aerocapture corridor PARALLEL implementation
-AerocaptureCorridor = 2;
+AerocaptureCorridor = 3;
 
 AerocapFiles = "savedExperiment_step01V3";
 
@@ -46,7 +46,7 @@ densityMode = 1;    % Used when AerocaptureCorridor = 1 and robustCorridor = fal
 %---------------------------- OPTIMISATION MODE --------------------------%
 %   [0] = NO
 %   [1] = YES
-optimisation = 0;
+optimisation = 1;
 
 weights = [ 0,...   % V_umbrella
             0,...   % Fuel for corrective manoeuvress (Dv)
