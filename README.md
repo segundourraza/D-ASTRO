@@ -45,7 +45,9 @@ Simply clone this repo!
 
 ## Authors
 Segundo Urraza Atue
+
 Linkedin: [@segundourrazaatue](https://www.linkedin.com/in/segundourrazaatue/)
+
 Email: segundourraza@gmail.com
 
 ## Version History
