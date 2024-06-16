@@ -13,7 +13,7 @@ simInputs.f_V =@(V) tauberSuttonFunction(V);    % empirical function of velcoity
 
 % Atmopsheric model options
 % Use dafult Martian model used in D-ASTRO publication?
-simInputs.planet = 'earth';
+simInputs.planet = 'mars';
 simInputs.defaultMarsModel = true;
 simInputs.defaultEarthModel = true;
 
