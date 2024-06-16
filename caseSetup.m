@@ -72,8 +72,12 @@ simInputs.Opti.e_orb_target = targetOrbit(3);
 %   OUTPUTS:    -T: Temperature (K)
 %               -P: pressure (Pa)
 %               -rho: density (Kg/m3)
+
 if simInputs.defaultMarsModel && lower(simInputs.planet) == "mars"
-    run 'atmospheric models'\atmoMarsTables.m  
+    addpath("atmospheric models\Mars\")
+    run 'atmospheric models'\Mars\atmoMarsTables.m  
+    simInputs.atmoModel = @(h, denMod, full_analysis) atmoModelMars(h, denMod, full_analysis, simInputs.models);
 elseif lower(simInputs.planet) == "earth"
-    error('ERROR: Earth atmosphere not yet coded!')
+    simInputs.atmoModel = @(h, denMod, full_analysis) atmoModelEarth(h, denMod);
+    % error('ERROR: Earth atmosphere not yet coded!')
 end

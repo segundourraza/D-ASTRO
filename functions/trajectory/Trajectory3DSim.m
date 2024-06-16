@@ -6,7 +6,7 @@ mu = simInputs.mu;
 
 params = [BC, density_mode, simInputs.R, simInputs.SC.m, simInputs.mu, simInputs.SC.L_D, simInputs.Omega];
 x0 = [simInputs.delta0, simInputs.lambda0, simInputs.R0 , simInputs.V0, gamma0, simInputs.chi0];
-[t, y] = ode45( @(t, x) reentryModel(t, x, params, simInputs.models), simInputs.tspan, x0, simInputs.odeOptions);
+[t, y] = ode45( @(t, x) reentryModel(t, x, params, simInputs.atmoModel), simInputs.tspan, x0, simInputs.odeOptions);
 
 delta = y(:,1);     % Longitud
 lambda = y(:,2);    % Latitude

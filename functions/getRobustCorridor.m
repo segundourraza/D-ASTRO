@@ -18,7 +18,7 @@ while abs(gamma_lower-gamma_prev) > simInputs.tol && (iteration < simInputs.MaxI
     gamma_prev = gamma_lower;
     gamma_lower = 0.5*(gamma_max + gamma_min);
     x0 = [simInputs.delta0, simInputs.lambda0, simInputs.R0, simInputs.V0, gamma_lower, simInputs.chi0];
-    [~, y] = ode45( @(t, x) reentryModel(t, x, params, simInputs.models), simInputs.tspan, x0, simInputs.odeOptions);
+    [~, y] = ode45( @(t, x) reentryModel(t, x, params, simInputs.atmoModel), simInputs.tspan, x0, simInputs.odeOptions);
     rEnd = y(end,3); % Radius of SC at end of trajectory
     
     % Identify lower limit of corridor, separates surface collision with no surface collision
@@ -43,7 +43,7 @@ while abs(gamma_upper-gamma_prev) > simInputs.tol && (iteration < simInputs.MaxI
     gamma_prev = gamma_upper;
     gamma_upper = 0.5*(gamma_max + gamma_min);
     x0(5) =  gamma_upper;
-    [~, y] = ode45( @(t, x) reentryModel(t, x, params, simInputs.models), simInputs.tspan, x0, simInputs.odeOptions);
+    [~, y] = ode45( @(t, x) reentryModel(t, x, params, simInputs.atmoModel), simInputs.tspan, x0, simInputs.odeOptions);
     rEnd = y(end,3); % Altitude of SC at end of trajectory
     vEnd = y(end,4); % Velocity of SC at end of trajectory
     specific_energy = 0.5*vEnd^2 - mu/rEnd;

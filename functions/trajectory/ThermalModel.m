@@ -10,8 +10,7 @@ RN = simInputs.SC.RN_RB*RB;
 time = trajectoryData(:,1);
 h = trajectoryData(:,2) - simInputs.R;
 V = trajectoryData(:,3);
-[~, ~, rho] = atmoModel(h, density_mode, 0, simInputs.models);
-% [~, ~, rho] = earthAtm(h, density_mode);
+[~, ~, rho] = simInputs.atmoModel(h, density_mode, 0);
 
 % radiative heat transfer
 q_rad = simInputs.C .* RN.^0.526 .* rho.^1.19 .* simInputs.f_V(V); % radiative heat flux from fluid to wall (W/m^2)

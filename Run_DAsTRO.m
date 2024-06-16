@@ -20,7 +20,7 @@ saveOption = true;
 %   [1] = Single Re-entry trajectory analysis
 %   [2] = Compute Aerocapture corridor SERIAL implementation
 %   [3] = Compute Aerocapture corridor PARALLEL implementation
-AerocaptureCorridor = 3;
+AerocaptureCorridor = 2;
 
 AerocapFiles = "savedExperiment_step01V3";
 

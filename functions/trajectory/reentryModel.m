@@ -1,4 +1,4 @@
-function [y] = reentryModel(t, x, params, models)
+function [y] = reentryModel(t, x, params, atmoModel)
 
 %% GLOBAL PARAMETERS
 BC = params(1);
@@ -30,8 +30,8 @@ elseif R > Rm + 200e3
 end
 
 h = R - Rm; % Altitude
-[~, ~, rho] = atmoModel(h, density_mode, 0, models); % Atmospheric properties
-% [~, ~, rho] = earthAtm(h, density_mode);
+% [~, ~, rho] = atmoModel(h, density_mode, 0, models); % Atmospheric properties
+[~, ~, rho] = atmoModel(h, density_mode, 0); % Atmospheric properties
 q_inf = 0.5*rho*V^2; % Dynamic head
 
 %% DRAG MODEL
