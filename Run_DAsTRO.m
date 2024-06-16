@@ -36,11 +36,6 @@ if AerocaptureCorridor == 1
     BC_range = xopt(:,1);
     gamma_range = xopt(:,2)*pi/180;
 end
-% Atmopsheric model options
-% Use dafult Martian model used in D-ASTRO publication?
-planet = 'mars';
-defaultMarsModel = true;
-defaultEarthModel = true;
 
 densityMode = 1;    % Used when AerocaptureCorridor = 1 and robustCorridor = false
 %---------------------------- OPTIMISATION MODE --------------------------%
@@ -48,13 +43,13 @@ densityMode = 1;    % Used when AerocaptureCorridor = 1 and robustCorridor = fal
 %   [1] = YES
 optimisation = 1;
 
-weights = [ 0,...   % V_umbrella
-            0,...   % Fuel for corrective manoeuvress (Dv)
-            1,...   % Heat load (Q)
+weights = [ 0;   % V_umbrella
+            0;   % Fuel for corrective manoeuvress (Dv)
+            1;   % Heat load (Q)
             0];     % Peak heatting rate (qdot_max)
 
-targetOrbit = [ 4620.5,...  % Semi-major axis (km)
-                70,...      % Inclination (deg)
+targetOrbit = [ 4620.5;  % Semi-major axis (km)
+                70;      % Inclination (deg)
                 0.05];      % Eccentricity
 
 %---------------------------- SETUP PHASE --------------------------%

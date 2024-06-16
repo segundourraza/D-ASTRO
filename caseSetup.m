@@ -14,6 +14,18 @@ elseif computer =="GLNXA64" % Linux OS
 end
 fileData.outputName = outputName;
 
+% Check for dependencies
+v = ver;
+[installedToolboxes{1:length(v)}] = deal(v.Name);
+if AerocaptureCorridor == 3 && ~ismember('Parallel Computing Toolbox', installedToolboxes)
+    warning("'Parallel Computing Toolbox' is not installed. Switching to SERIAL implementation.")
+    AerocaptureCorridor =2;
+end
+
+if optimisation && ~ismember('Optimization Toolbox', installedToolboxes)
+    error("'Optimization Toolbox' is not installed. Only trajectory analysis tool can be executed (AerocaptureCorridor = 1).")
+end
+
 % Add required paths
 addpath("atmospheric models\")
 addpath("functions\")
@@ -34,7 +46,7 @@ simInputs.densityMode = densityMode;
 
 % Optimisation paramteres
 simInputs.Opti.optimisation = optimisation;
-simInputs.Opti.weights = [weights, 0, 0, 0];
+simInputs.Opti.weights = [weights', 0, 0, 0];
 simInputs.Opti.target = [0, 0, 0, 0, 0, 0,0];
 
 % Operational target orbit
@@ -60,8 +72,8 @@ simInputs.Opti.e_orb_target = targetOrbit(3);
 %   OUTPUTS:    -T: Temperature (K)
 %               -P: pressure (Pa)
 %               -rho: density (Kg/m3)
-if defaultMarsModel && lower(planet) == "mars"
+if simInputs.defaultMarsModel && lower(simInputs.planet) == "mars"
     run 'atmospheric models'\atmoMarsTables.m  
-elseif lower(planet) == "earth"
+elseif lower(simInputs.planet) == "earth"
     error('ERROR: Earth atmosphere not yet coded!')
 end
