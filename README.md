@@ -37,7 +37,7 @@ Simply clone this repo!
     * Optimization weights
     * Target operational orbit
 * D-ASTRO is executed by running **Run_DASTRO.m** script
-* After completion, a new folder "results" is added to the working directory where a ".mat" file will be saved. If individual tajectories are performed, these will be saved to separate ".csv" files with the follwoing column order:
+* After completion, a new folder named "Output files" is added to the working directory where a ".mat" file will be saved. If individual tajectory simulations are performed, these will be saved to separate ".csv" files with the follwoing column order:
 
 | Time | Radial distance | Velocity | Flight path angle | Longitude | Latitude | Heading angle | Heat Transfer | Heat load |
 | --- |:---:|:---:|:---:|:---:|:---:|:---:|:---:|---:|
