@@ -49,7 +49,7 @@ simInputs.chi0 = deg2rad(90-108.24);   % Heading angle (rad)
 %---------------------------- GENERAL OPTIONS ----------------------------%
 
 simInputs.completeCorridor = false; % If True, aerocapture boundaries for all density modes is computed (SLOW, BUT USEFULL FOR PLOTS)
-simInputs.nPoints = 50;             % Resulting trajectory is sampled to yield a trajectory with nPoints 
+simInputs.nPoints = 100;             % Resulting trajectory is sampled to yield a trajectory with nPoints 
 
 simInputs.odeOptions    = odeset('Events', @(t,y) myEventLimit(t,y,[simInputs.R, simInputs.h_AI]),...
                                  'RelTol',1e-6,'AbsTol',1e-6);

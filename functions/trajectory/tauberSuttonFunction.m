@@ -1,14 +1,21 @@
-function [f_V] = tauberSuttonFunction(V)
+function [f] = tauberSuttonFunction(V)
 % Gives the value of the tabulated function f(V) used in the Tauber-Sutton
 % correlation for radiative heating
 
 % polynomial coefficients
-a0 = 1.849710801386854e+03;
-a1 = -1.007772515250308;
-a2 = 2.027860638323226e-04;
-a3 = -1.793168028714326e-08;
-a4 = 5.943163921781362e-13;
+p1 = 1.808638254121861e-19;
+p2 = -7.749778685483423e-15;
+p3 = 1.380022203185181e-10;
+p4 = -1.308026283879384e-06;
+p5 = 0.006965644994364;
+p6 = -19.770449216103156;
+p7 = 2.336639165179594e+04;
 
-f_V = a0 + V.* (a1 + V.* (a2 + V.* (a3 + a4 .* V)));
+if V < 6000
+    f = 0.0;
+elseif V >9000
+    f = 32.8;
+else
+    f = p7 + V.* (p6 + V.* (p5 + V.* (p4 +  V.*(p3 + V.*(p2 + V.*p1)))));
 end
-
+end

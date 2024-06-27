@@ -12,8 +12,8 @@ clc
 
 outputName ="test1";
 
-plotOption = true;
-saveOption = true;
+plotOption = false;
+saveOption = false;
 
 %---------------------- AEROCAPTURE CORRDIOR METHOD ----------------------%
 %   [0] = Optimise exisitng corridor
@@ -35,6 +35,10 @@ if AerocaptureCorridor == 1
             3.000 -8.780];
     BC_range = xopt(:,1);
     gamma_range = xopt(:,2)*pi/180;
+
+
+    gamma_range = linspace(-11.5, -10, 7)*pi/180;
+    BC_range = ones([1,length(gamma_range)])*20;
 end
 
 densityMode = 1;    % Used when AerocaptureCorridor = 1 and robustCorridor = false
@@ -43,10 +47,10 @@ densityMode = 1;    % Used when AerocaptureCorridor = 1 and robustCorridor = fal
 %   [1] = YES
 optimisation = 1;
 
-weights = [ 0;   % V_umbrella
-            0;   % Fuel for corrective manoeuvress (Dv)
+weights = [ 1;   % V_umbrella
+            1;   % Fuel for corrective manoeuvress (Dv)
             1;   % Heat load (Q)
-            0];     % Peak heatting rate (qdot_max)
+            1];     % Peak heatting rate (qdot_max)
 
 targetOrbit = [ 4620.5;  % Semi-major axis (km)
                 70;      % Inclination (deg)

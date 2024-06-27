@@ -12,7 +12,12 @@ elseif computer =="GLNXA64" % Linux OS
     fileData.OutputPath = fullfile("Output file"); % Output directory
     fileData.WorkingPath = fullfile(pwd + "\"); % Working directory
 end
-fileData.outputName = outputName;
+
+if exist('outputName','var') == 1
+    fileData.outputName = outputName;
+else
+    fileData.outputName = replace(string(datetime('now','Format','hh:mm:ss')),':','-');
+end
 
 % Check for dependencies
 v = ver;
@@ -43,18 +48,18 @@ simInputs.BC_range =  BC_range;
 simInputs.densityMode = densityMode;
 
 %% OPTIMIZATION PARAMETERS
-
-% Optimisation paramteres
-simInputs.Opti.optimisation = optimisation;
-simInputs.Opti.weights = [weights', 0, 0, 0];
-simInputs.Opti.target = [0, 0, 0, 0, 0, 0,0];
-
-% Operational target orbit
-simInputs.Opti.BC_range = BC_range;
-simInputs.Opti.a_orb_target = targetOrbit(1)*1e3;
-simInputs.Opti.i_orb_target = targetOrbit(2)*pi/180;
-simInputs.Opti.e_orb_target = targetOrbit(3);
-
+if optimisation
+    % Optimisation paramteres
+    simInputs.Opti.optimisation = optimisation;
+    simInputs.Opti.weights = [weights', 0, 0, 0];
+    simInputs.Opti.target = [0, 0, 0, 0, 0, 0,0];
+    
+    % Operational target orbit
+    simInputs.Opti.BC_range = BC_range;
+    simInputs.Opti.a_orb_target = targetOrbit(1)*1e3;
+    simInputs.Opti.i_orb_target = targetOrbit(2)*pi/180;
+    simInputs.Opti.e_orb_target = targetOrbit(3);
+end
 %% ATMOPSHERIC MODELS
 
 % MUST PROVIDE ATMOPSHERIC FUNCTION TO MODEL THE ATMOPSHERE OF THE

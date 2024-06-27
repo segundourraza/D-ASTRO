@@ -1,5 +1,4 @@
 function [simualtionOptions,Gammas ,OrbitalParams,Trajectories,DesignDrivers, BCArray, Optimalvalues, OptiResults] = simulatorUserInterface(fileData, simInputs)
-simInputs.Opti.weights = (simInputs.Opti.weights - min(simInputs.Opti.weights))./(max(simInputs.Opti.weights) - min(simInputs.Opti.weights));
 
 simualtionOptions = [];
 Gammas = [];
@@ -13,10 +12,6 @@ OptiResults = [];
 
 startTime = datetime('now','Format','hh:mm:ss.SSS');
 fprintf("Start time: \t %s\n", string(startTime));
-
-if fileData.outputName == ""
-    fileData.outputName = replace(string(datetime('now','Format','hh:mm:ss')),':','-');
-end
 
 if simInputs.AerocaptureCorridor ~= 0
     if simInputs.AerocaptureCorridor == 1
@@ -49,6 +44,8 @@ end
 
 
 if simInputs.Opti.optimisation && simInputs.AerocaptureCorridor ~= 1
+    simInputs.Opti.weights = (simInputs.Opti.weights - min(simInputs.Opti.weights))./(max(simInputs.Opti.weights) - min(simInputs.Opti.weights));
+
     fprintf("\nSTART OPTIMISATION....\n")
     if simInputs.completeCorridor
         nTheta = 7;
@@ -73,9 +70,10 @@ end
 if simInputs.plot_option
     if simInputs.AerocaptureCorridor == 1
         lineCycle = {'-', '--', ':', '-.'};
-        markerCycle = {'none','o','^','.', 's'};
-        nCycle = 5;
-        ms = 6;
+        markerCycle = {'o','^','.', 's'};
+        nCycle = 4;
+        msSmall = 2;
+        ms = msSmall;
         
         fig = figure();
         sgtitle("Trajectory Profiles")
@@ -89,11 +87,11 @@ if simInputs.plot_option
         h = zeros(1, length(Trajectories));
         for i = 1:length(Trajectories)
             if i <=nCycle-1
-                style = [lineCycle(i),markerCycle(1)];
+                style = [lineCycle(i),'none'];
             else
-                rem = mod(i,nCycle)+2;
+                rem = mod(i,nCycle)+1;
                 style = [lineCycle(floor(i/(nCycle-1))),markerCycle(rem)];
-                if markerCycle(rem) == "."; ms = 24; end
+                if style(2) == "."; ms = 24; else; ms = msSmall; end
             end
             h(1,i) = plot(Trajectories{i}(:,1), (Trajectories{i}(:,2) - simInputs.R)/1e3, 'DisplayName',sprintf("(BC, FPA) = (%5.1f, %2.2f deg)", simInputs.BC_range(i), simInputs.gamma_range(i)*180/pi), LineStyle=style(1), Marker=style(2), Color='k', MarkerSize=ms);
         end
@@ -105,7 +103,8 @@ if simInputs.plot_option
         lh=legend(h,'location','southeast');
         set(lh,'position',[.7 .25 .1 .1]);
         grid on ;grid minor;
-
+        
+        ms = 6;
         subplot(2,2,2)
         hold on
         for i = 1:length(Trajectories)
@@ -120,22 +119,40 @@ if simInputs.plot_option
         hold off
         xlabel("$t$ (s)")
         grid on ;grid minor;
-
+        ms = msSmall;
         subplot(2,2,3)
         hold on
         for i = 1:length(Trajectories)
             if i <=nCycle-1
-                style = [lineCycle(i),markerCycle(1)];
+                style = [lineCycle(i),'none'];
             else
-                rem = mod(i,nCycle)+2;
+                rem = mod(i,nCycle)+1;
                 style = [lineCycle(floor(i/(nCycle-1))),markerCycle(rem)];
-                if markerCycle(rem) == "."; ms = 24; end
+                if style(2) == "."; ms = 24; else; ms = msSmall; end
             end
             plot(Trajectories{i}(:,3)/1e3, (Trajectories{i}(:,2) - simInputs.R)/1e3,  LineStyle=style(1), Marker=style(2), Color='k', MarkerSize=ms)
         end
         hold off
         xlabel("$v$ (kms$^{-1}$)")
         ylabel("$h$ (km)")
+        grid on ;grid minor;
+
+
+
+        ms = 2;
+        figure();
+        hold on
+        for i = 1:length(Trajectories)
+            yyaxis right
+            plot(Trajectories{i}(:,1), Trajectories{i}(:,end-1)/1e4)
+            ylabel("$\dot{q}$ (W/cm$^2$)" )
+
+            yyaxis left
+            plot(Trajectories{i}(:,1), Trajectories{i}(:,end)/1e6)
+            ylabel("$Q$ (MJ/m$^2$)" )
+        end
+        hold off
+        xlabel("$t$ (s)")
         grid on ;grid minor;
 
     elseif any(simInputs.AerocaptureCorridor == [2,3])
