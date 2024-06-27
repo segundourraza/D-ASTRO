@@ -1,7 +1,9 @@
 # D-ASTRO: Determination of Aerocapture Successful Trajectories and Robust Optimization
 
-Welcome to the D-ASTRO algorithm repository! This repo contains the algorithms developed in ["A New Algorithm for Aerocapture Mission Design and Multi-disciplinary Design Optimisation (2024)"](https://arc.aiaa.org/loi/aiaaj).
-
+Welcome to the D-ASTRO algorithm repository! 
+<!---
+This repo contains the algorithms developed in ["A New Algorithm for Aerocapture Mission Design and Multi-disciplinary Design Optimisation (2024)"](https://arc.aiaa.org/loi/aiaaj) (NOT YET PUBLISHED).
+--->
 ## Description
 
 D-ASTRO is designed to address the complex challenges in the field of aerocapture maneuvers. This innovative tool redefines the optimization framework for these maneuvers, filling a significant gap in current research. Developed in MATLAB, D-ASTRO provides an efficient and robust solution for the rapid analysis and optimization of generic aerocapture missions.
