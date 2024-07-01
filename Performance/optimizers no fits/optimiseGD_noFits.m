@@ -1,10 +1,5 @@
-function [Results] = optimiseGD(BC_Array, fits, DesignDrivers, simInputs, x0)
-if nargin <5
-    ind = floor(length(BC_Array)/2);
-    x0 = [BC_Array(ind), fits{2}(BC_Array(ind))];
-end
-simInputs.BC_range = BC_Array;
-
+function [Results] = optimiseGD_noFits(BC_Array, DesignDrivers, simInputs, x0)
+%% COMPUTE MIN MAX FOR NORMALIZATION
 nTheta = 7;
 AllMax = zeros([1,nTheta]);
 AllMin = zeros([1,nTheta]);
@@ -19,11 +14,10 @@ AllMin(2) = 0;
 AllMax(AllMax == 0) = 1;
 minmax = [AllMin',AllMax'];
 %% OPTIMISATION
-
 options = simInputs.Opti.options;
 
-fun = @(x) ObejctiveFunc2D(x, simInputs, minmax);
-nonlcon = @(x) customConstraint(x, fits{2}, fits{1}, simInputs.Dgamma);
+fun = @(x) ObejctiveFunc2D(x, simInputs,minmax);
+nonlcon = @(x) binarySearchConstraint(x, simInputs.Dgamma, simInputs);
 
 A = [];
 b = [];
@@ -31,8 +25,8 @@ Aeq = [];
 beq = [];
 lb = [BC_Array(1), -pi/2];
 ub = [BC_Array(end), -0];
-[xOpt,~,~,optiOutput] = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-[cost,designDrivers, COE] = ObejctiveFunc2D(xOpt, simInputs, minmax);
+[xOpt,~,~,output] = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+[cost,designDrivers, COE] = ObejctiveFunc2D(xOpt, simInputs);
 
 designDrivers(2) = designDrivers(2)/1e3; % m/s to Km/s
 designDrivers(3) = designDrivers(3)/1e6; % J/m2 to MJ/m2
@@ -69,8 +63,6 @@ Results.COE = COE;
 Results.x0 = x0;
 Results.target = simInputs.Opti.target;
 Results.Weights = simInputs.Opti.weights;
-Results.mins = AllMin';
-Results.maxs = AllMax';
-Results.fits = fits;
-Results.optiOutput = optiOutput;
+Results.optiOutput = output;
+
 end

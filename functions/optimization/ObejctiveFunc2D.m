@@ -1,9 +1,12 @@
-function [y,designDrivers, orbitalElements] = ObejctiveFunc2D(x, simInputs)
+function [y,designDrivers, orbitalElements] = ObejctiveFunc2D(x, simInputs, minmax)
 
 density_mode = 3;
 
 [simParams, ~] = Trajectory3DSim(x, density_mode, simInputs);
-orbitalElements = simParams([1,2,3,9, 10, 11]);
+orbitalElements = simParams([1, 2, 3, 9, 10, 11]);
 
-[y, designDrivers] = cost_function(simInputs, simParams, 1);
-% [y, designDrivers] = cost_function(simInputs, simParams);
+if nargin > 2
+    [y, designDrivers] = cost_function(simInputs, simParams, minmax);
+else
+    [y, designDrivers] = cost_function(simInputs, simParams);
+end

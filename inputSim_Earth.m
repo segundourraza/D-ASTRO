@@ -1,21 +1,22 @@
-function simInputs = inputSim()
+function simInputs = inputSim_Earth()
 
 %--------------------------- PLANETARY PARAMETERS ------------------------%
 
-simInputs.R = 3389.5e3;                     % Radius of target planet (m)
-simInputs.mu = 4.282837e13;                 % Gravitational parameter of target planet (m3 s−2)
-simInputs.Omega = 7.0830e-05;               % Angular frequency of target planet (rad s-1)
+simInputs.R = 6371e3;                        % Radius of target planet (m)
+simInputs.mu = 3.986004418e14;               % Gravitational parameter of target planet (m3 s−2)
+simInputs.Omega = 7.2921159e-05;             % Angular frequency of target planet (rad s-1)
 
-simInputs.k = 1.83e-4;                      % Sutton-Graves constant
+simInputs.k = 1.7415e-4;                      % Sutton-Graves constant for Earth
+simInputs.constTS = {4.736e4, @(v, rho) 1.072e6*v.^-1.88.*rho.^-0.325, 1.22};  % Tauber-Sutton constants
 simInputs.sigma = 5.67e-8;                  % Boltzmann constant
-simInputs.constTS = {2.35e4, @(V, rho) 0.526, 1.19};  % Tauber-Sutton constants
-simInputs.f_V =@(V) tauberSuttonFunction(V);    % empirical function of velcoity for radiative heating
+simInputs.f_V =@(V) tauberSuttonFunction_earth(V);    % empirical function of velcoity for radiative heating
 
 % Atmopsheric model options
-% Use dafult Martian model used in D-ASTRO publication?
-simInputs.planet = 'mars';
+% Use dafult Earth model used in D-ASTRO publication?
+simInputs.planet = 'Earth';
 simInputs.defaultMarsModel = true;
 simInputs.defaultEarthModel = true;
+
 
 %-------------------------- SPACECRAFT PARAMETERS ------------------------%
 
@@ -36,7 +37,7 @@ simInputs.SC.epsilon = 0.9;             % Emissivity of TPS
 %--------------------- INSERTION TRAJECTORY PARAMETERS -------------------%
 simInputs.Dgamma = deg2rad(0.2);
 
-simInputs.Vinf = 3.5;                  % Hyperbolit excess velocity (km s-1)
+simInputs.Vinf = 1.0;                  % Hyperbolit excess velocity (km s-1)
 % simInputs.Vinf = 6.0;                  % Hyperbolit excess velocity (km s-1)
 simInputs.h_AI = 125e3;                % Altitude of atmopsheric interface (AI)
 
@@ -65,14 +66,13 @@ simInputs.VolumeMethod = 3;     % [1]:  Stowed deployable aroshell volume
 simInputs.gamma_min = -45*pi/180;
 simInputs.gamma_max = -0*pi/180;
 
-simInputs.tol = 2.6e-5;       % FPA binary search algorithm tolerence
-simInputs.MaxIterations = 1e4;
+simInputs.tol = 1e-8;       % FPA binary search algorithm tolerence
+simInputs.MaxIterations = 50;
 
 %-------------------- OPTIMISATION ALGORITHM OPTIONS ---------------------%
 
 DispOpt ='iter';
 simInputs.Opti.options = optimoptions('fmincon',...
-                                      'Algorithm','active-set',...
                                       'Display',DispOpt,...
                                       'MaxIterations',8000, ...
                                       'PlotFcn','optimplotfvalconstr');
@@ -84,4 +84,3 @@ simInputs.Opti.costFunc = 1;
 simInputs.Opti.delta = 0.1;
 simInputs.verbose = 0;
 
-end

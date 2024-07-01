@@ -1,4 +1,4 @@
-function [simualtionOptions,Gammas ,OrbitalParams,Trajectories,DesignDrivers, BCArray, Optimalvalues, OptiResults] = simulatorUserInterface(fileData, simInputs)
+function [simualtionOptions,Gammas ,OrbitalParams,Trajectories,DesignDrivers, BCArray, OptiResults] = simulatorUserInterface(fileData, simInputs)
 
 simualtionOptions = [];
 Gammas = [];
@@ -6,7 +6,6 @@ OrbitalParams = [];
 Trajectories = [];
 DesignDrivers = [];
 BCArray =  [];
-Optimalvalues = [];
 OptiResults = [];
 
 
@@ -38,7 +37,7 @@ if simInputs.AerocaptureCorridor ~= 0
             fitlb = fit(simInputs.BC_range', Gammas(:,1), fitname);
             fitub = fit(simInputs.BC_range', Gammas(:,2), fitname);
         end
-        simInputs.fits = {fitlb, fitub};
+        fits = {fitlb, fitub};
     end
 end
 
@@ -53,9 +52,17 @@ if simInputs.Opti.optimisation && simInputs.AerocaptureCorridor ~= 1
         temp(:,1:nTheta) = DesignDrivers(:,nTheta*(5-1)+1:nTheta*5);
         temp(:,nTheta+1:nTheta*2) = DesignDrivers(:,nTheta*(4-1)+1:nTheta*4);
         DesignDrivers = temp;
-        [Optimalvalues, OptiResults] = optimiseGD(BCArray, Gammas(:,[5,4]), DesignDrivers, simInputs);
+        if isfield(simInputs.Opti, 'x0')
+            [OptiResults] = optimiseGD(BCArray, fits, DesignDrivers, simInputs, simInputs.Opti.x0);
+        else
+            [OptiResults] = optimiseGD(BCArray, fits, DesignDrivers, simInputs);
+        end
     else
-        [Optimalvalues, OptiResults] = optimiseGD(BCArray, Gammas, DesignDrivers, simInputs);
+        if isfield(simInputs.Opti, 'x0')
+            [OptiResults] = optimiseGD(BCArray, fits, DesignDrivers, simInputs, simInputs.Opti.x0);
+        else
+            [OptiResults] = optimiseGD(BCArray, fits, DesignDrivers, simInputs);
+        end
     end
 
     % Run optimal Trajectory
@@ -165,13 +172,13 @@ if simInputs.plot_option
         hold on
 
         BC = linspace(BCArray(1), BCArray(end), 100);
-        plot(BC, simInputs.fits{1}(BC)*180/pi, '-', 'color', "#7E2F8E")
-        plot(BC, simInputs.fits{2}(BC)*180/pi, '-', 'color', "#7E2F8E")
+        plot(BC, fits{1}(BC)*180/pi, '-', 'color', "#7E2F8E")
+        plot(BC, fits{2}(BC)*180/pi, '-', 'color', "#7E2F8E")
 
         if simInputs.Opti.optimisation
-            plot(Optimalvalues(2), Optimalvalues(3)*180/pi, '.k','MarkerSize',32, 'DisplayName', 'Design Point')
-            xline(Optimalvalues(2), '--k' , 'LineWidth',1.5, HandleVisibility='off')
-            yline(Optimalvalues(3)*180/pi, '--k' , 'LineWidth',1.5, HandleVisibility='off')
+            plot(OptiResults.BCOpt, OptiResults.GammaOpt*180/pi, '.k','MarkerSize',32, 'DisplayName', 'Design Point')
+            xline(OptiResults.BCOpt, '--k' , 'LineWidth',1.5, HandleVisibility='off')
+            yline(OptiResults.GammaOpt*180/pi, '--k' , 'LineWidth',1.5, HandleVisibility='off')
         end
         hold off
 
@@ -229,7 +236,7 @@ if simInputs.save_option
         end
     end
 
-    save(saveFilePath,'simualtionOptions','Gammas','OrbitalParams','Trajectories','DesignDrivers','BCArray', "Optimalvalues", "OptiResults");
+    save(saveFilePath,'simualtionOptions','Gammas','OrbitalParams','Trajectories','DesignDrivers','BCArray', "OptiResults");
     disp("Results saved in path: " + saveFilePath)
     fprintf("\n")
 end
@@ -239,5 +246,3 @@ elapsedTimeSeconds.Format = 'hh:mm:ss.SSS';
 fprintf('\n')
 fprintf("End time: \t\t %s\n", string(endTime));
 fprintf("Elapsed time: \t %s\n", string(elapsedTimeSeconds));
-
-% clearvars -except simualtionOptions Gammas OrbitalParams Trajectories DesignDrivers BCArray Optimalvalues OptiResults

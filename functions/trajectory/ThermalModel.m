@@ -13,7 +13,7 @@ V = trajectoryData(:,3);
 [~, ~, rho] = simInputs.atmoModel(h, density_mode, 0);
 
 % radiative heat transfer
-q_rad = simInputs.C .* RN.^0.526 .* rho.^1.19 .* simInputs.f_V(V); % radiative heat flux from fluid to wall (W/m^2)
+q_rad = simInputs.constTS{1} .* RN.^simInputs.constTS{2}(V, rho) .* rho.^simInputs.constTS{3} .* simInputs.f_V(V); % radiative heat flux from fluid to wall (W/m^2)
 
 
 switch simInputs.thermalModel

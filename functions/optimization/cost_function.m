@@ -1,7 +1,4 @@
-function [cost, x] = cost_function(simInputs, simParams, Normalise)
-if nargin < 3
-    Normalise = 0;
-end
+function [cost, x] = cost_function(simInputs, simParams, minmax)
 
 %% CONSTANTS
 
@@ -29,20 +26,24 @@ V_umbrella = sqrt(simInputs.SC.m / ( BC * simInputs.SC.CD * pi));
 DV_total = getCorectiveManeuvreBurn(a, e, i, a_target, i_target, mu, simInputs.R0);
 
 % DISTANCE FROM CORRIDOR BISECTION
-if isfield(simInputs, 'fitlb')
-    Dgamma = min(abs([simInputs.fitlb(BC),simInputs.fitub(BC)]- gamma));
-else
-    Dgamma = 0;
-end
+% if isfield(simInputs, 'fitlb')
+%     Dgamma = min(abs([simInputs.fitlb(BC),simInputs.fitub(BC)]- gamma));
+% else
+%     Dgamma = 0;
+% end
+Dgamma = 0;
 
 x = [V_umbrella, DV_total, Q, q_dot_max, Tw, a ,Dgamma];
 %% FEATURE SCALING AND COST
 cost = 0;
-if Normalise
-    x_norm = (x-simInputs.Opti.mins)./(simInputs.Opti.maxs -simInputs.Opti.mins); % Normalisation
+if nargin > 2
+    mins = minmax(:,1)';
+    maxs = minmax(:,2)';
+    x_norm = (x-mins)./(maxs -mins); % Normalisation
     if simInputs.Opti.costFunc == 1
         cost = least_square_method(x_norm, simInputs.Opti.target, simInputs.Opti.weights);
-    elseif simInputs.Opti.costFunc == 2
+        % cost = least_square_method(x_norm, mins, simInputs.Opti.weights);
+elseif simInputs.Opti.costFunc == 2
         cost = pseudo_huber_loss(x_norm, simInputs.Opti.target, simInputs.Opti.weights, simInputs.Opti.delta) ;
     end
 end

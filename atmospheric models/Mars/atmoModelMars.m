@@ -1,4 +1,4 @@
-function [T, P, rho] = atmoModel(h, density_mode, full_analysis, models)
+function [T, P, rho] = atmoModelMars(h, density_mode, full_analysis, models)
 %% INFORMATION
 % This function runs trajectory simulation with currernt aerothermodynamic
 % model and plots a series of plots , in addition it outputs a strcuture

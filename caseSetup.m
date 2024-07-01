@@ -38,28 +38,15 @@ addpath("functions\trajectory\")
 addpath("functions\optimization\")
 
 
-simInputs.plot_option = plotOption;
-simInputs.save_option = saveOption;
-%% Aerocapture corridor paramteres
-simInputs.AerocaptureCorridor = AerocaptureCorridor;
-simInputs.AerocapFiles = AerocapFiles;
-simInputs.gamma_range = gamma_range;
-simInputs.BC_range =  BC_range;
-simInputs.densityMode = densityMode;
-
-%% OPTIMIZATION PARAMETERS
-if optimisation
-    % Optimisation paramteres
-    simInputs.Opti.optimisation = optimisation;
-    simInputs.Opti.weights = [weights', 0, 0, 0];
-    simInputs.Opti.target = [0, 0, 0, 0, 0, 0,0];
-    
-    % Operational target orbit
-    simInputs.Opti.BC_range = BC_range;
-    simInputs.Opti.a_orb_target = targetOrbit(1)*1e3;
-    simInputs.Opti.i_orb_target = targetOrbit(2)*pi/180;
-    simInputs.Opti.e_orb_target = targetOrbit(3);
+if exist('planet','var') == 0
+    planet = "mars";
 end
+
+if exist('defaultMarsModel','var') == 0
+    defaultMarsModel = 1;
+end
+
+
 %% ATMOPSHERIC MODELS
 
 % MUST PROVIDE ATMOPSHERIC FUNCTION TO MODEL THE ATMOPSHERE OF THE
@@ -78,11 +65,41 @@ end
 %               -P: pressure (Pa)
 %               -rho: density (Kg/m3)
 
-if simInputs.defaultMarsModel && lower(simInputs.planet) == "mars"
+if defaultMarsModel && lower(planet) == "mars"
     addpath("atmospheric models\Mars\")
+    simInputs = inputSim();
     run 'atmospheric models'\Mars\atmoMarsTables.m  
     simInputs.atmoModel = @(h, denMod, full_analysis) atmoModelMars(h, denMod, full_analysis, simInputs.models);
-elseif lower(simInputs.planet) == "earth"
+elseif lower(planet) == "earth"
+    simInputs = inputSim_Earth();
     simInputs.atmoModel = @(h, denMod, full_analysis) atmoModelEarth(h, denMod);
-    % error('ERROR: Earth atmosphere not yet coded!')
+end
+
+
+simInputs.plot_option = plotOption;
+simInputs.save_option = saveOption;
+%% Aerocapture corridor paramteres
+simInputs.AerocaptureCorridor = AerocaptureCorridor;
+if simInputs.AerocaptureCorridor ==1
+    simInputs.gamma_range = gamma_range;
+end
+simInputs.BC_range =  BC_range;
+simInputs.densityMode = densityMode;
+
+%% OPTIMIZATION PARAMETERS
+if optimisation
+    % Initial condition
+    if exist('x0','var')
+        simInputs.Opti.x0 = x0;
+    end
+    % Optimisation paramteres
+    simInputs.Opti.optimisation = optimisation;
+    simInputs.Opti.weights = [weights', 0, 0, 0];
+    simInputs.Opti.target = [0, 0, 0, 0, 0, 0,0];
+    
+    % Operational target orbit
+    simInputs.Opti.BC_range = BC_range;
+    simInputs.Opti.a_orb_target = targetOrbit(1)*1e3;
+    simInputs.Opti.i_orb_target = targetOrbit(2)*pi/180;
+    simInputs.Opti.e_orb_target = targetOrbit(3);
 end

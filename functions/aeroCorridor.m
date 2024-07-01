@@ -1,8 +1,6 @@
 function [AllGamma, Params, Trajectories, DesignDrivers] = aeroCorridor(simInputs)
 
 BC_range = simInputs.BC_range;
-gamma_range = simInputs.gamma_range;
-
 nBC = length(BC_range);
 
 %% INITIALISING PARAMETERS
@@ -15,9 +13,9 @@ switch simInputs.AerocaptureCorridor
         AllGamma = zeros([nBC, 6]);
         Trajectories = cell([nBC, 1]);
         for ibc = 1:nBC % Looping BC range
-            fprintf("\n\tRunning Trajectory case:  (BC, FPA) = (%6.2f, %2.3f deg)", BC_range(ibc), gamma_range(ibc)*180/pi)
+            fprintf("\n\tRunning Trajectory case:  (BC, FPA) = (%6.2f, %2.3f deg)", BC_range(ibc), simInputs.gamma_range(ibc)*180/pi)
 
-            [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),gamma_range(ibc)], simInputs.densityMode, simInputs);
+            [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),simInputs.gamma_range(ibc)], simInputs.densityMode, simInputs);
             t = trajResults(:,1);
             tend =  t(end);
             tq = linspace(0, tend, simInputs.nPoints);
@@ -34,7 +32,7 @@ switch simInputs.AerocaptureCorridor
             Params = zeros([nBC, 9*2]);             % Stores trajectory parameters
             DesignDrivers = zeros([nBC, 7*2]);      % Stores design driver values
             AllGamma = zeros([nBC, 2]);             % Stores gammas at boundaries
-            Trajectories = cell([nBC, 2]);          % Stores trajctories
+            Trajectories = [];                      % Stores trajctories
             for ibc = 1:nBC
                 fprintf("\n\tStrating BC case %4u of %4u (%6.2f)", ibc, nBC, BC_range(ibc));
                 % Compute lower and upper robust FPA angles (binary search)
@@ -44,32 +42,21 @@ switch simInputs.AerocaptureCorridor
 
                 % Running LOWER boundary trajectory with HIGH density mode
                 % to get driver values
-                [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),AllGamma(ibc,1)], 3, simInputs);
-                t = trajResults(:,1);
-                tq = linspace(0, t(end), simInputs.nPoints);
-                vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
-
+                [simParams, ~] = Trajectory3DSim([BC_range(ibc),AllGamma(ibc,1)], 3, simInputs);
                 [~, temp] = cost_function(simInputs, simParams);
                 % Add simualtion results:
                 % [a, e, i, Omega, omega, theta,qdot_max, Q, Tw]
                 Params(ibc,1:9) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
                 DesignDrivers(ibc,1:7) = [temp(1:end-1), Dgamma];
-                Trajectories{ibc,1} = [tq', vq];
-
 
                 % Running UPPER boundary trajectory with LOW density mode
                 % to get driver values
-                [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),AllGamma(ibc,2)], 2, simInputs);
-                t = trajResults(:,1);
-                tq = linspace(0, t(end), simInputs.nPoints);
-                vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
-
+                [simParams, ~] = Trajectory3DSim([BC_range(ibc),AllGamma(ibc,2)], 2, simInputs);
                 [~, temp] = cost_function(simInputs, simParams);
                 % Add simualtion results:
                 % [a, e, i, Omega, omega, theta,qdot_max, Q, Tw]
                 Params(ibc,10:18) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
                 DesignDrivers(ibc,8:14) = [temp(1:end-1), Dgamma];
-                Trajectories{ibc,2} = [tq', vq];
             end
         else
             Params = zeros([nBC, 3*9*2]);             % Stores trajectory parameters
@@ -154,14 +141,13 @@ switch simInputs.AerocaptureCorridor
             Params = zeros([nBC, 9*2]);             % Stores trajectory parameters
             DesignDrivers = zeros([nBC, 7*2]);      % Stores design driver values
             AllGamma = zeros([nBC, 2]);             % Stores gammas at boundaries
-            Trajectories = cell([nBC, 2]);          % Stores trajctories
+            Trajectories = [];                      % Stores trajctories
             fprintf("\n")
             parfor ibc = 1:nBC
                 localSimInputs = simInputs;
                 tempParams = zeros([1, 9*2]);
                 tempDrivers = zeros([1, 7*2]);
                 tempGamma = zeros([1, 2]);
-                tempTraj = zeros([localSimInputs.nPoints, 9*2]);
 
                 fprintf("\tStrating BC case %4u of %4u (%6.2f)\n", ibc, nBC, BC_range(ibc));
                 % Compute lower and upper robust FPA angles (binary search)
@@ -171,38 +157,25 @@ switch simInputs.AerocaptureCorridor
 
                 % Running LOWER boundary trajectory with HIGH density mode
                 % to get driver values
-                [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),tempGamma(1)], 3, simInputs);
-                t = trajResults(:,1);
-                tq = linspace(0, t(end), simInputs.nPoints);
-                vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
-
+                [simParams, ~] = Trajectory3DSim([BC_range(ibc),tempGamma(1)], 3, simInputs);
                 [~, temp] = cost_function(simInputs, simParams);
                 % Add simualtion results:
                 % [a, e, i, Omega, omega, theta,qdot_max, Q, Tw]
                 tempParams(1:9) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
                 tempDrivers(1:7) = [temp(1:end-1), Dgamma];
-                tempTraj(:,1:9) = [tq', vq];
 
                 % Running UPPER boundary trajectory with LOW density mode
                 % to get driver values
-                [simParams, trajResults] = Trajectory3DSim([BC_range(ibc),tempGamma(2)], 2, simInputs);
-                t = trajResults(:,1);
-                tq = linspace(0, t(end), simInputs.nPoints);
-                vq = interp1(t, trajResults(:,2:end), tq, 'pchip');
-
+                [simParams, ~] = Trajectory3DSim([BC_range(ibc),tempGamma(2)], 2, simInputs);
                 [~, temp] = cost_function(simInputs, simParams);
                 % Add simualtion results:
                 % [a, e, i, Omega, omega, theta,qdot_max, Q, Tw]
                 tempParams(10:18) = [simParams(1), simParams(2), simParams(3), simParams(9), simParams(10), simParams(11), simParams(4), simParams(5), simParams(6)];
                 tempDrivers(8:14) = [temp(1:end-1), Dgamma];
-                tempTraj(:,10:18) = [tq', vq];
 
                 Params(ibc,:) = tempParams;
                 DesignDrivers(ibc,:) = tempDrivers;
                 AllGamma(ibc,:) = tempGamma;
-                for i = 1:2
-                    Trajectories{ibc, i} = tempTraj(:,(i-1)*9+1:i*9);
-                end
             end
         else
             Params = zeros([nBC, 3*9*2]);             % Stores trajectory parameters

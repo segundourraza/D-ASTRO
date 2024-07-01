@@ -3,7 +3,7 @@ function [y] = reentryModel(t, x, params, atmoModel)
 %% GLOBAL PARAMETERS
 BC = params(1);
 density_mode = params(2);
-Rm = params(3);
+Rp = params(3);
 m = params(4);
 mu = params(5);
 L_D = params(6);
@@ -23,13 +23,14 @@ g = mu/R^2;
 
 % Atmopsheric parameters
 
-if R < Rm
-    R = Rm;
-elseif R > Rm + 200e3
-    R = Rm +200e3;
+if R < Rp
+    R = Rp;
+elseif R > Rp + 200e3
+    R = Rp +200e3;
 end
 
-h = R - Rm; % Altitude
+h = R - Rp; % Altitude
+% fprintf("%f\n",h/1e3)
 % [~, ~, rho] = atmoModel(h, density_mode, 0, models); % Atmospheric properties
 [~, ~, rho] = atmoModel(h, density_mode, 0); % Atmospheric properties
 q_inf = 0.5*rho*V^2; % Dynamic head
